@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -19,70 +19,6 @@ import SearchBar from "@/components/app/SearchBar";
 import FilterPill from "@/components/app/FilterPill";
 import { PrimaryPillButton } from "@/components/app/ActionButtons";
 
-const initialProjects = [
-  {
-    id: 1,
-    name: "TaskFlow App",
-    progress: 88,
-    lastActivity: "il y a 1 min",
-    members: 5,
-    color: "indigo",
-    favorite: true,
-    archived: false,
-  },
-  {
-    id: 2,
-    name: "Dashboard Analytics",
-    progress: 97,
-    lastActivity: "il y a 1 min",
-    members: 4,
-    color: "violet",
-    favorite: false,
-    archived: false,
-  },
-  {
-    id: 3,
-    name: "E-commerce 2025",
-    progress: 72,
-    lastActivity: "il y a 1h",
-    members: 3,
-    color: "emerald",
-    favorite: true,
-    archived: false,
-  },
-  {
-    id: 4,
-    name: "Mobile Redesign",
-    progress: 54,
-    lastActivity: "il y a 1j",
-    members: 7,
-    color: "rose",
-    favorite: false,
-    archived: false,
-    deadlineSoon: true,
-  },
-  {
-    id: 5,
-    name: "AI Assistant Pro",
-    progress: 41,
-    lastActivity: "il y a 3j",
-    members: 2,
-    color: "amber",
-    favorite: false,
-    archived: true,
-  },
-  {
-    id: 6,
-    name: "SaaS Landing",
-    progress: 100,
-    lastActivity: "ancien",
-    members: 6,
-    color: "cyan",
-    favorite: true,
-    archived: false,
-  },
-];
-
 const colorMap = {
   indigo: "bg-indigo-500",
   violet: "bg-violet-500",
@@ -100,11 +36,57 @@ const FILTERS = [
   { value: "archived", label: "Archivés" },
 ];
 
+
+const MOCK_PROJECTS = [
+  {
+    id: 1,
+    name: "TaskFlow App",
+    progress: 72,
+    lastActivity: "il y a 3 min",
+    members: 5,
+    favorite: true,
+    archived: false,
+    color: "indigo",
+  },
+  {
+    id: 2,
+    name: "Supermarché IA",
+    progress: 40,
+    lastActivity: "il y a 2 h",
+    members: 4,
+    favorite: false,
+    archived: false,
+    color: "emerald",
+  },
+  {
+    id: 3,
+    name: "Dashboard Analytics",
+    progress: 100,
+    lastActivity: "hier",
+    members: 3,
+    favorite: true,
+    archived: false,
+    color: "violet",
+  },
+  {
+    id: 4,
+    name: "Landing Page 2025",
+    progress: 10,
+    lastActivity: "il y a 5 j",
+    members: 2,
+    favorite: false,
+    archived: true,
+    color: "rose",
+  },
+];
+
 export default function Projects() {
-  const [projects, setProjects] = useState(initialProjects);
+  const [projects, setProjects] = useState(MOCK_PROJECTS);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [view, setView] = useState("grid");
+
+  const navigate = useNavigate();
 
   const total = projects.length;
   const completed = projects.filter((p) => p.progress === 100).length;
@@ -119,9 +101,7 @@ export default function Projects() {
       if (filter === "active") return !p.archived;
       return true;
     })
-    .filter((p) =>
-      p.name.toLowerCase().includes(search.toLowerCase())
-    );
+    .filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
 
   const toggleFavorite = (id) => {
     setProjects((prev) =>
@@ -142,18 +122,16 @@ export default function Projects() {
                 Tous les projets
               </h1>
               <p className="text-sm text-slate-500 mt-2">
-                {total} projets • {completed} terminé
-                {completed > 1 ? "s" : ""} • {favorites} favoris •{" "}
-                {archived} archivé{archived > 1 ? "s" : ""}
+                {total} projet{total > 1 ? "s" : ""} • {completed} terminé
+                {completed > 1 ? "s" : ""} • {favorites} favori
+                {favorites > 1 ? "s" : ""} • {archived} archivé
+                {archived > 1 ? "s" : ""}
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-
               <button
-                onClick={() =>
-                  setView(view === "grid" ? "list" : "grid")
-                }
+                onClick={() => setView(view === "grid" ? "list" : "grid")}
                 className="p-3 rounded-2xl bg-white border border-slate-200 hover:border-slate-300 transition-all shadow-sm"
               >
                 {view === "grid" ? (
@@ -163,8 +141,10 @@ export default function Projects() {
                 )}
               </button>
 
-
-              <PrimaryPillButton icon={Plus}>
+              <PrimaryPillButton
+                icon={Plus}
+                onClick={() => navigate("/app/projects/new")}
+              >
                 Nouveau projet
               </PrimaryPillButton>
             </div>
@@ -188,7 +168,7 @@ export default function Projects() {
           />
         </div>
 
- 
+
         <div
           className={`grid ${
             view === "grid"
@@ -204,7 +184,12 @@ export default function Projects() {
               transition={{ delay: i * 0.06 }}
               whileHover={{ y: view === "grid" ? -6 : 0 }}
             >
-              <Link to={`/projects/${project.id}`} className="block">
+              <button
+                onClick={() =>
+                  navigate(`/app/tasks?projectId=${project.id}`)
+                }
+                className="block w-full text-left"
+              >
                 <div
                   className={`bg-white rounded-3xl p-6 shadow-sm border ${
                     project.archived
@@ -212,17 +197,17 @@ export default function Projects() {
                       : "border-slate-100"
                   } hover:shadow-lg transition-all duration-300 group relative cursor-pointer`}
                 >
-  
                   <div
                     className={`h-1 rounded-t-3xl mb-5 ${
-                      colorMap[project.color]
+                      colorMap[project.color] || "bg-indigo-500"
                     }`}
                   />
 
-             
+         
                   <button
                     onClick={(e) => {
                       e.preventDefault();
+                      e.stopPropagation();
                       toggleFavorite(project.id);
                     }}
                     className="absolute top-5 right-5 z-10"
@@ -236,7 +221,6 @@ export default function Projects() {
                     />
                   </button>
 
- 
                   <h3 className="text-lg font-semibold text-slate-900 mb-3 pr-10">
                     {project.name}
                     {project.archived && (
@@ -246,6 +230,7 @@ export default function Projects() {
                     )}
                   </h3>
 
+  
                   <div className="mb-5">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm text-slate-600">
@@ -257,38 +242,36 @@ export default function Projects() {
                     </div>
                     <div className="w-full bg-slate-200 rounded-full h-3">
                       <div
-                        className={`h-3 rounded-full transition-all duration-1000 ${
-                          colorMap[project.color]
+                        className={`h-3 rounded-full transition-all duration-700 ${
+                          colorMap[project.color] || "bg-indigo-500"
                         }`}
                         style={{ width: `${project.progress}%` }}
                       />
                     </div>
                   </div>
 
+               
                   <div className="flex items-center gap-3 text-sm text-slate-600 mb-4">
                     <Clock className="h-4 w-4" />
                     {project.lastActivity}
                   </div>
 
+      
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Users className="h-5 w-5 text-slate-500" />
                       <span className="font-medium text-slate-800">
-                        {project.members} membres
+                        {project.members} membre
+                        {project.members > 1 ? "s" : ""}
                       </span>
                     </div>
 
-                    {project.deadlineSoon && (
-                      <span className="text-xs font-semibold text-red-600">
-                        Bientôt
-                      </span>
-                    )}
                     {project.progress === 100 && (
                       <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                     )}
                   </div>
                 </div>
-              </Link>
+              </button>
             </motion.div>
           ))}
         </div>
