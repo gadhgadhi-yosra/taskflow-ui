@@ -28,6 +28,8 @@ import SearchBar from "@/components/app/SearchBar";
 import FilterPill from "@/components/app/FilterPill";
 import { PrimaryPillButton } from "@/components/app/ActionButtons";
 
+const TEAM_MEMBERS_STORAGE_KEY = "taskflow_team_members";
+
 const MOCK_PROJECTS = [
   { id: 1, name: "TaskFlow App" },
   { id: 2, name: "Supermarché IA" },
@@ -58,7 +60,6 @@ const SORTS = [
   { key: "activity", label: "Activité ↑" },
   { key: "-activity", label: "Activité ↓" },
 ];
-
 
 const MOCK_MEMBERS = [
   {
@@ -99,6 +100,30 @@ const MOCK_MEMBERS = [
   },
 ];
 
+function loadInitialMembers() {
+  if (typeof window === "undefined") return MOCK_MEMBERS;
+  try {
+    const raw = localStorage.getItem(TEAM_MEMBERS_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(
+        TEAM_MEMBERS_STORAGE_KEY,
+        JSON.stringify(MOCK_MEMBERS)
+      );
+      return MOCK_MEMBERS;
+    }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    localStorage.setItem(
+      TEAM_MEMBERS_STORAGE_KEY,
+      JSON.stringify(MOCK_MEMBERS)
+    );
+    return MOCK_MEMBERS;
+  } catch (err) {
+    console.error("Erreur lecture storage team :", err);
+    return MOCK_MEMBERS;
+  }
+}
+
 const initialsOf = (fullName) =>
   fullName
     .split(" ")
@@ -124,7 +149,9 @@ const sortByKey = (arr, key) => {
 export default function Team() {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
 
+  const [allMembers, setAllMembers] = useState(() => loadInitialMembers());
   const [members, setMembers] = useState([]);
+
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("Tous");
   const [statusFilter, setStatusFilter] = useState("Tous");
@@ -140,19 +167,39 @@ export default function Team() {
   const searchParams = new URLSearchParams(location.search);
   const projectIdFromUrl = searchParams.get("projectId");
 
+  const updateAllMembersStorage = (updater) => {
+    setAllMembers((prev) => {
+      const next =
+        typeof updater === "function" ? updater(prev) : updater;
+      try {
+        localStorage.setItem(
+          TEAM_MEMBERS_STORAGE_KEY,
+          JSON.stringify(next)
+        );
+      } catch (err) {
+        console.error("Erreur écriture storage team :", err);
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     const initialId = projectIdFromUrl
       ? Number(projectIdFromUrl)
       : MOCK_PROJECTS[0]?.id;
     setSelectedProjectId(initialId);
-
-    const projMembers = MOCK_MEMBERS.filter(
-      (m) => m.projectId === initialId
-    );
-    setMembers(projMembers);
   }, [projectIdFromUrl]);
 
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setMembers([]);
+      return;
+    }
+    const projMembers = allMembers.filter(
+      (m) => m.projectId === selectedProjectId
+    );
+    setMembers(projMembers);
+  }, [selectedProjectId, allMembers]);
 
   useEffect(() => {
     function onDocClick(e) {
@@ -173,11 +220,6 @@ export default function Team() {
   const handleProjectChange = (e) => {
     const value = e.target.value ? Number(e.target.value) : null;
     setSelectedProjectId(value);
-
-    const projMembers = MOCK_MEMBERS.filter(
-      (m) => m.projectId === value
-    );
-    setMembers(projMembers);
 
     const params = new URLSearchParams(location.search);
     if (value) params.set("projectId", String(value));
@@ -207,7 +249,7 @@ export default function Team() {
   };
 
   const handleDelete = (id) => {
-    setMembers((prev) => prev.filter((m) => m.id !== id));
+    updateAllMembersStorage((prev) => prev.filter((m) => m.id !== id));
     setMenuOpenId(null);
   };
 
@@ -219,6 +261,12 @@ export default function Team() {
   const handleAddMemberClick = () => {
     if (!selectedProjectId) return;
     navigate(`/app/projects/${selectedProjectId}/add-member`);
+  };
+
+  const handleCardClick = (member) => {
+    if (!selectedProjectId) return;
+
+    navigate(`/app/team/${selectedProjectId}/member/${member.id}`);
   };
 
   const insights = useMemo(() => {
@@ -245,12 +293,14 @@ export default function Team() {
               </div>
 
               <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
-                Équipe {currentProject ? `– ${currentProject.name}` : ""}
+                Équipe{" "}
+                {currentProject ? `– ${currentProject.name}` : ""}
               </h1>
 
               {currentProject ? (
                 <p className="text-sm text-slate-600">
-                  {members.length} membre{members.length > 1 ? "s" : ""} •{" "}
+                  {members.length} membre
+                  {members.length > 1 ? "s" : ""} •{" "}
                   <span className="font-medium text-emerald-600">
                     {onlineCount} en ligne
                   </span>
@@ -292,7 +342,10 @@ export default function Team() {
               </div>
 
               {selectedProjectId && (
-                <PrimaryPillButton icon={Plus} onClick={handleAddMemberClick}>
+                <PrimaryPillButton
+                  icon={Plus}
+                  onClick={handleAddMemberClick}
+                >
                   Inviter un membre
                 </PrimaryPillButton>
               )}
@@ -353,7 +406,7 @@ export default function Team() {
           </div>
         ) : (
           <>
-      
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 place-items-center">
               {filtered.map((member, i) => {
                 const config =
@@ -370,7 +423,13 @@ export default function Team() {
                     whileHover={{ y: -6 }}
                     className="w-full"
                   >
-                    <div className="group bg-white rounded-3xl p-8 shadow-sm border border-gray-100 hover:shadow-2xl hover:border-gray-200 transition-all duration-500 relative cursor-pointer max-w-full">
+                    <div
+                      className="group bg-white rounded-3xl p-8 shadow-sm border border-gray-100 hover:shadow-2xl hover:border-gray-200 transition-all duration-500 relative cursor-pointer max-w-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCardClick(member);
+                      }}
+                    >
                       <div className="absolute top-7 right-7 pointer-events-none">
                         <div
                           className={`w-3.5 h-3.5 rounded-full ${
@@ -483,7 +542,7 @@ export default function Team() {
               })}
             </div>
 
-   
+     
             <div className="mt-16 max-w-4xl mx-auto">
               <div className="bg-gradient-to-r from-indigo-600/5 to-purple-600/5 rounded-3xl p-8 border border-indigo-200/50 backdrop-blur-xl">
                 <div className="flex items-center gap-3 mb-4">

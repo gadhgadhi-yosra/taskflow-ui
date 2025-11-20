@@ -14,6 +14,7 @@ import Tasks from "@/pages/Tasks";
 import AddTask from "@/pages/AddTask";
 import Team from "@/pages/Team";
 import AddTeamMember from "@/pages/AddTeamMember";
+import MemberDetails from "@/pages/MemberDetails";
 import Settings from "@/pages/Settings";
 
 function AppLayout() {
@@ -69,6 +70,10 @@ export default function App() {
         <Route
           path="projects/:projectId/add-member"
           element={<AddTeamMember />}
+        />
+        <Route
+          path="team/:projectId/member/:memberId"
+          element={<MemberDetails />}
         />
         <Route path="settings" element={<Settings />} />
       </Route>

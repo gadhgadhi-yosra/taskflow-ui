@@ -23,6 +23,8 @@ import TaskCard from "@/components/tasks/TaskCard";
 import TaskDetailsModal from "@/components/tasks/TaskDetailsModal";
 
 
+const TASKS_STORAGE_KEY = "taskflow_tasks";
+
 const MOCK_PROJECTS = [
   { id: 1, name: "TaskFlow App" },
   { id: 2, name: "Supermarché IA" },
@@ -42,7 +44,6 @@ const FILTER_OPTIONS = [
   { value: "mine", label: "Assignées à moi" },
 ];
 
-// MOCK TASKS – front only
 const MOCK_TASKS = [
   {
     id: 1,
@@ -55,7 +56,8 @@ const MOCK_TASKS = [
     priority: "high",
     estimateHours: 3,
     assigneeName: "Toi",
-    description: "Créer les écrans d’authentification et connecter au backend plus tard.",
+    description:
+      "Créer les écrans d’authentification et connecter au backend plus tard.",
   },
   {
     id: 2,
@@ -98,9 +100,30 @@ const MOCK_TASKS = [
   },
 ];
 
+
+function loadInitialTasks() {
+  if (typeof window === "undefined") return MOCK_TASKS;
+
+  try {
+    const raw = localStorage.getItem(TASKS_STORAGE_KEY);
+    if (!raw) {
+      localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(MOCK_TASKS));
+      return MOCK_TASKS;
+    }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(MOCK_TASKS));
+    return MOCK_TASKS;
+  } catch (err) {
+    console.error("Erreur lecture localStorage tasks :", err);
+    return MOCK_TASKS;
+  }
+}
+
+
 export default function Tasks() {
   const [selectedProjectId, setSelectedProjectId] = useState(null);
-  const [tasks, setTasks] = useState(MOCK_TASKS);
+  const [tasks, setTasks] = useState(() => loadInitialTasks());
 
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -112,9 +135,21 @@ export default function Tasks() {
   const navigate = useNavigate();
 
 
+  const updateTasks = (updater) => {
+    setTasks((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      try {
+        localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(next));
+      } catch (err) {
+        console.error("Erreur écriture localStorage tasks :", err);
+      }
+      return next;
+    });
+  };
+
+
   const urlParams = new URLSearchParams(location.search);
   const projectIdFromUrl = urlParams.get("projectId");
-
 
   const effectiveProjectId =
     selectedProjectId ||
@@ -139,27 +174,27 @@ export default function Tasks() {
     (t) => t.projectId === effectiveProjectId
   );
 
-
   const applyFilters = (list) =>
     list.filter((task) => {
       const q = search.toLowerCase();
+
       const matchesSearch =
         task.title.toLowerCase().includes(q) ||
-        task.tags.some((t) => t.toLowerCase().includes(q));
+        (task.tags || []).some((t) => t.toLowerCase().includes(q));
 
       if (!matchesSearch) return false;
 
       if (filter === "today") return task.dueLabel === "Aujourd’hui";
       if (filter === "urgent")
         return (
-          task.tags.some((t) => t.toLowerCase() === "urgent") ||
+          (task.tags || []).some((t) => t.toLowerCase() === "urgent") ||
           ["high", "critical"].includes(task.priority)
         );
       if (filter === "mine") return task.assigneeName === "Toi";
+
       return true;
     });
 
- 
   const tasksByColumn = useMemo(() => {
     const grouped = { todo: [], inprogress: [], done: [] };
     projectTasks.forEach((t) => {
@@ -178,9 +213,21 @@ export default function Tasks() {
   const getTaskCount = (colId) => tasksByColumn[colId].length;
 
 
+  const totalTasks = projectTasks.length;
+  const doneTasks = projectTasks.filter((t) => t.status === "done").length;
+  const inProgressTasks = projectTasks.filter(
+    (t) => t.status === "inprogress"
+  ).length;
+  const todoTasks = projectTasks.filter((t) => t.status === "todo").length;
+
+  const completionRate =
+    totalTasks === 0 ? 0 : Math.round((doneTasks * 100) / totalTasks);
+
+
   const onDragEnd = (result) => {
     if (!result.destination) return;
     const { source, destination } = result;
+
     if (
       source.droppableId === destination.droppableId &&
       source.index === destination.index
@@ -194,14 +241,13 @@ export default function Tasks() {
     const [moved] = copy[sourceCol].splice(source.index, 1);
 
     moved.status = destCol;
-
     copy[destCol].splice(destination.index, 0, moved);
-
 
     const other = tasks.filter((t) => t.projectId !== effectiveProjectId);
     const merged = [...other, ...copy.todo, ...copy.inprogress, ...copy.done];
-    setTasks(merged);
+    updateTasks(merged);
   };
+
 
   const openTaskModal = (task) => {
     setModalTask(task);
@@ -209,12 +255,13 @@ export default function Tasks() {
   };
 
   const handleDeleteTask = (task) => {
-    setTasks((prev) => prev.filter((t) => t.id !== task.id));
+    updateTasks((prev) => prev.filter((t) => t.id !== task.id));
     setModalOpen(false);
     setModalTask(null);
   };
 
   const handleEditTask = (task) => {
+
     console.log("✏️ Modifier (front only) :", task);
     setModalOpen(false);
     setModalTask(null);
@@ -224,6 +271,7 @@ export default function Tasks() {
     if (!effectiveProjectId) return;
     navigate(`/app/projects/${effectiveProjectId}/add-task`);
   };
+
 
   return (
     <AppPage>
@@ -237,8 +285,7 @@ export default function Tasks() {
                 Tableau de tâches
               </div>
               <h1 className="text-3xl md:text-4xl font-bold text-slate-900">
-                Mes tâches{" "}
-                {currentProject ? `– ${currentProject.name}` : ""}
+                Mes tâches {currentProject ? `– ${currentProject.name}` : ""}
               </h1>
               {currentProject ? (
                 <p className="text-sm text-slate-600">
@@ -252,6 +299,7 @@ export default function Tasks() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 min-w-[260px]">
+       
               <div className="flex-1">
                 <span className="text-xs font-medium text-slate-500 block mb-1">
                   Projet courant
@@ -265,9 +313,7 @@ export default function Tasks() {
                     onChange={handleProjectChange}
                     className="w-full rounded-2xl border border-indigo-100 bg-white/80 pl-9 pr-9 py-2.5 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 backdrop-blur-sm appearance-none"
                   >
-                    <option value="">
-                      Sélectionner un projet
-                    </option>
+                    <option value="">Sélectionner un projet</option>
                     {MOCK_PROJECTS.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
@@ -298,6 +344,32 @@ export default function Tasks() {
 
 
         {effectiveProjectId && (
+          <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              label="Total tâches"
+              value={totalTasks}
+              accent="indigo"
+            />
+            <StatCard
+              label="À faire"
+              value={todoTasks}
+              accent="amber"
+            />
+            <StatCard
+              label="En cours"
+              value={inProgressTasks}
+              accent="blue"
+            />
+            <StatCard
+              label="Terminées"
+              value={`${doneTasks} (${completionRate}%)`}
+              accent="emerald"
+            />
+          </div>
+        )}
+
+
+        {effectiveProjectId && (
           <div className="mb-10 flex flex-wrap items-center gap-3">
             <SearchBar
               value={search}
@@ -315,7 +387,7 @@ export default function Tasks() {
           </div>
         )}
 
-
+ 
         {!effectiveProjectId ? (
           <div className="mt-20 flex flex-col items-center justify-center text-center gap-4">
             <div className="w-20 h-20 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center shadow-sm">
@@ -333,6 +405,7 @@ export default function Tasks() {
 
                 return (
                   <div key={col.id} className="flex flex-col">
+        
                     <div className="mb-6 flex items-center gap-4">
                       <div
                         className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${
@@ -356,14 +429,15 @@ export default function Tasks() {
                       </div>
                     </div>
 
+           
                     <Droppable droppableId={col.id}>
                       {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`space-y-4 min-h-[420px] ${
+                          className={`space-y-4 min-h-[420px] rounded-3xl ${
                             snapshot.isDraggingOver
-                              ? "bg-indigo-50/40 rounded-3xl p-4"
+                              ? "bg-indigo-50/40 p-4"
                               : ""
                           }`}
                         >
@@ -399,13 +473,24 @@ export default function Tasks() {
                               )}
                             </Draggable>
                           ))}
+
                           {provided.placeholder}
+
                           {list.length === 0 && (
-                            <div className="text-center py-16 text-gray-400 text-sm">
-                              <Sparkles className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                            <div className="text-center py-8 text-gray-400 text-sm border border-dashed border-slate-200 rounded-3xl bg-slate-50/40">
+                              <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-30" />
                               Aucune tâche ici
                             </div>
                           )}
+
+                    
+                          <QuickAddTask
+                            columnId={col.id}
+                            projectId={effectiveProjectId}
+                            onAdd={(newTask) =>
+                              updateTasks((prev) => [...prev, newTask])
+                            }
+                          />
                         </div>
                       )}
                     </Droppable>
@@ -429,4 +514,59 @@ export default function Tasks() {
       />
     </AppPage>
   );
+}
+
+
+function StatCard({ label, value, accent }) {
+  const accentClasses =
+    accent === "emerald"
+      ? "bg-emerald-50 text-emerald-700"
+      : accent === "amber"
+      ? "bg-amber-50 text-amber-700"
+      : accent === "blue"
+      ? "bg-sky-50 text-sky-700"
+      : "bg-indigo-50 text-indigo-700";
+
+  return (
+    <div className="rounded-3xl bg-white border border-slate-100 p-4 flex items-center justify-between shadow-sm">
+      <div>
+        <p className="text-xs text-slate-500">{label}</p>
+        <p className="text-2xl font-bold text-slate-900 mt-1">{value}</p>
+      </div>
+      <div
+        className={`w-9 h-9 rounded-2xl ${accentClasses} flex items-center justify-center text-xs font-semibold`}
+      >
+        {label[0]}
+      </div>
+    </div>
+  );
+}
+
+
+function QuickAddTask({ columnId, projectId, onAdd }) {
+  const [title, setTitle] = useState("");
+
+  const handleQuickAdd = (e) => {
+    e.preventDefault();
+    const value = title.trim();
+    if (!value) return;
+
+    const newTask = {
+      id: Date.now(), 
+      projectId,
+      title: value,
+      status: columnId,
+      dueLabel: "Sans échéance",
+      dueColor: "gray",
+      tags: [],
+      priority: "medium",
+      estimateHours: null,
+      assigneeName: "Toi",
+      description: "",
+    };
+
+    onAdd(newTask);
+    setTitle("");
+  };
+
 }

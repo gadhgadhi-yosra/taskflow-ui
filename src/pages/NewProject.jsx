@@ -1,8 +1,9 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Palette, Star, Archive } from "lucide-react";
+import { Plus, Palette, Star, Archive, Users, Gauge } from "lucide-react";
 import AppPage from "@/components/layout/AppPage";
+
+const STORAGE_KEY = "taskflow_projects";
 
 const COLORS = [
   { value: "indigo", label: "Indigo", class: "bg-indigo-500" },
@@ -13,11 +14,25 @@ const COLORS = [
   { value: "cyan", label: "Cyan", class: "bg-cyan-500" },
 ];
 
+function loadExistingProjects() {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error("Erreur lecture localStorage projets:", err);
+    return [];
+  }
+}
+
 export default function NewProject() {
   const [name, setName] = useState("");
   const [color, setColor] = useState("indigo");
   const [favorite, setFavorite] = useState(false);
   const [archived, setArchived] = useState(false);
+  const [members, setMembers] = useState(1);
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
@@ -30,19 +45,39 @@ export default function NewProject() {
       return;
     }
     if (name.trim().length < 2) {
-      setError("Le nom du projet doit contenir au moins 2 caractères.");
+      setError(
+        "Le nom du projet doit contenir au moins 2 caractères."
+      );
       return;
     }
 
     setError("");
 
-   
-    console.log("🧪 Nouveau projet (front only):", {
+    const existing = loadExistingProjects();
+
+    const newProject = {
+      id: Date.now(), 
       name: name.trim(),
       color,
       favorite,
       archived,
-    });
+      progress: Number.isNaN(Number(progress))
+        ? 0
+        : Math.min(100, Math.max(0, Number(progress))),
+      members: Number.isNaN(Number(members))
+        ? 0
+        : Math.max(0, Number(members)),
+      lastActivity: "à l’instant",
+    };
+
+    const updated = [...existing, newProject];
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      console.log("🧪 Projet ajouté (front only):", newProject);
+    } catch (err) {
+      console.error("Erreur écriture localStorage projets:", err);
+    }
 
     navigate("/app/projects");
   };
@@ -52,20 +87,23 @@ export default function NewProject() {
   return (
     <AppPage>
       <div className="max-w-3xl mx-auto px-6 py-10">
-
+ 
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900">Nouveau projet</h1>
+          <h1 className="text-4xl font-bold text-slate-900">
+            Nouveau projet
+          </h1>
           <p className="text-sm text-slate-500 mt-2">
-            Crée un projet avec le même style visuel que ton espace TaskFlow.
+            Crée un projet avec le même style visuel que ton espace
+            TaskFlow. (Front-only, sans backend)
           </p>
         </div>
 
-
+       
         <form
           onSubmit={handleSubmit}
           className="bg-white rounded-3xl shadow-sm border border-slate-100 p-8 space-y-8"
         >
- 
+     
           <div className="space-y-3">
             <label className="block text-sm font-medium text-slate-700">
               Nom du projet
@@ -87,7 +125,7 @@ export default function NewProject() {
             </div>
           </div>
 
- 
+
           <div className="space-y-4">
             <label className="block text-sm font-medium text-slate-700">
               Couleur
@@ -109,7 +147,9 @@ export default function NewProject() {
                       }
                     `}
                   >
-                    <div className={`w-2 h-2 rounded-full ${colorOption.class}`} />
+                    <div
+                      className={`w-2 h-2 rounded-full ${colorOption.class}`}
+                    />
                     {colorOption.label}
                   </button>
                 ))}
@@ -117,20 +157,25 @@ export default function NewProject() {
             </div>
 
             <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl">
-              <div className={`w-6 h-6 rounded-lg ${selectedColor.class} border border-slate-200`} />
+              <div
+                className={`w-6 h-6 rounded-lg ${selectedColor.class} border border-slate-200`}
+              />
               <div className="text-sm text-slate-600">
-                <span className="font-medium">Couleur sélectionnée :</span>{" "}
+                <span className="font-medium">
+                  Couleur sélectionnée :
+                </span>{" "}
                 {selectedColor.label}
               </div>
             </div>
           </div>
 
-          {/* Options */}
+        
           <div className="space-y-4">
             <label className="block text-sm font-medium text-slate-700">
               Options
             </label>
             <div className="flex flex-wrap gap-6">
+      
               <label className="inline-flex items-center gap-3 text-sm text-slate-700 p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer">
                 <input
                   type="checkbox"
@@ -140,7 +185,9 @@ export default function NewProject() {
                 />
                 <div
                   className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                    favorite ? "bg-amber-500 border-amber-500" : "bg-white border-slate-300"
+                    favorite
+                      ? "bg-amber-500 border-amber-500"
+                      : "bg-white border-slate-300"
                   }`}
                 >
                   {favorite && (
@@ -159,14 +206,21 @@ export default function NewProject() {
                 </div>
                 <Star
                   className={`h-4 w-4 ${
-                    favorite ? "text-amber-500 fill-amber-500" : "text-slate-400"
+                    favorite
+                      ? "text-amber-500 fill-amber-500"
+                      : "text-slate-400"
                   }`}
                 />
-                <span className={favorite ? "text-amber-700 font-medium" : "text-slate-600"}>
+                <span
+                  className={
+                    favorite ? "text-amber-700 font-medium" : "text-slate-600"
+                  }
+                >
                   Marquer comme favori
                 </span>
               </label>
 
+          
               <label className="inline-flex items-center gap-3 text-sm text-slate-700 p-3 rounded-2xl hover:bg-slate-50 transition-colors cursor-pointer">
                 <input
                   type="checkbox"
@@ -176,7 +230,9 @@ export default function NewProject() {
                 />
                 <div
                   className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                    archived ? "bg-slate-600 border-slate-600" : "bg-white border-slate-300"
+                    archived
+                      ? "bg-slate-600 border-slate-600"
+                      : "bg-white border-slate-300"
                   }`}
                 >
                   {archived && (
@@ -193,11 +249,69 @@ export default function NewProject() {
                     </svg>
                   )}
                 </div>
-                <Archive className={`h-4 w-4 ${archived ? "text-slate-600" : "text-slate-400"}`} />
-                <span className={archived ? "text-slate-700 font-medium" : "text-slate-600"}>
+                <Archive
+                  className={`h-4 w-4 ${
+                    archived ? "text-slate-600" : "text-slate-400"
+                  }`}
+                />
+                <span
+                  className={
+                    archived ? "text-slate-700 font-medium" : "text-slate-600"
+                  }
+                >
                   Archiver dès la création
                 </span>
               </label>
+            </div>
+          </div>
+
+   
+          <div className="grid md:grid-cols-2 gap-4">
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-700">
+                Progression initiale
+              </label>
+              <div className="rounded-2xl border border-slate-200 px-4 py-3 space-y-3">
+                <div className="flex items-center justify-between text-xs text-slate-500 mb-1">
+                  <span className="inline-flex items-center gap-1">
+                    <Gauge className="h-3.5 w-3.5" />
+                    Avancement
+                  </span>
+                  <span className="font-semibold text-slate-800">
+                    {progress}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={progress}
+                  onChange={(e) => setProgress(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+
+         
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-700">
+                Nombre de membres (aperçu)
+              </label>
+              <div className="flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3">
+                <Users className="h-4 w-4 text-slate-400" />
+                <input
+                  type="number"
+                  min={0}
+                  className="flex-1 border-none outline-none text-sm"
+                  value={members}
+                  onChange={(e) => setMembers(e.target.value)}
+                  placeholder="Ex : 3"
+                />
+              </div>
+              <p className="text-xs text-slate-400">
+                Juste pour l’affichage sur la carte du projet (front-only).
+              </p>
             </div>
           </div>
 
@@ -208,7 +322,9 @@ export default function NewProject() {
             </label>
             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200">
               <div className="flex items-start gap-3">
-                <div className={`w-3 h-12 rounded-lg ${selectedColor.class}`} />
+                <div
+                  className={`w-3 h-12 rounded-lg ${selectedColor.class}`}
+                />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between">
                     <h3 className="font-semibold text-slate-900 truncate">
@@ -218,24 +334,29 @@ export default function NewProject() {
                       <Star className="h-4 w-4 text-amber-500 fill-amber-500 flex-shrink-0 ml-2" />
                     )}
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-500">
-                    <span>Progression: 0%</span>
-                    <span>Membres: 0</span>
-                    {archived && <span className="text-slate-400">Archivé</span>}
+                  <div className="flex flex-wrap items-center gap-4 mt-2 text-xs text-slate-500">
+                    <span>Progression : {progress}%</span>
+                    <span>Membres : {members || 0}</span>
+                    {archived && (
+                      <span className="text-slate-400">Archivé</span>
+                    )}
+                    <span className="text-slate-400">
+                      Dernière activité : à l’instant
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-
+        
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
 
-     
+         
           <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
             <button
               type="button"

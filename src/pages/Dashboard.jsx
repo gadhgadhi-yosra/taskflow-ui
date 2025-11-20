@@ -1,27 +1,50 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+
 import {
-  Brain, Zap, Target, TrendingUp, Sparkles, Plus, Clock, AlertCircle,
-  CheckCircle, Users, Activity, Lightbulb, BarChart3, Calendar,
-  MessageSquare, Smile, ArrowRight, Bot
+  Brain,
+  Zap,
+  Target,
+  TrendingUp,
+  Plus,
+  AlertCircle,
+  CheckCircle,
+  Users,
+  Activity,
+  Lightbulb,
+  BarChart3,
+  Calendar,
+  ArrowRight,
+  Bot,
 } from "lucide-react";
+
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
+
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+import Chatbot from "@/components/chat/Chatbot";
 
 const stats = {
   aiUsage: "94%",
   tasksToday: 28,
   goalsReached: 21,
-  productivity: "+38%"
+  productivity: "+38%",
 };
 
 const todayTasks = [
@@ -31,9 +54,27 @@ const todayTasks = [
 ];
 
 const activeProjects = [
-  { name: "TaskFlow App", progress: 82, tasksOpen: 14, tasksDone: 46, color: "from-indigo-500 to-violet-600" },
-  { name: "Refonte E-commerce", progress: 67, tasksOpen: 9, tasksDone: 31, color: "from-emerald-500 to-teal-600" },
-  { name: "Dashboard Analytics", progress: 95, tasksOpen: 2, tasksDone: 58, color: "from-orange-500 to-pink-600" },
+  {
+    name: "TaskFlow App",
+    progress: 82,
+    tasksOpen: 14,
+    tasksDone: 46,
+    color: "from-indigo-500 to-violet-600",
+  },
+  {
+    name: "Refonte E-commerce",
+    progress: 67,
+    tasksOpen: 9,
+    tasksDone: 31,
+    color: "from-emerald-500 to-teal-600",
+  },
+  {
+    name: "Dashboard Analytics",
+    progress: 95,
+    tasksOpen: 2,
+    tasksDone: 58,
+    color: "from-orange-500 to-pink-600",
+  },
 ];
 
 const teamLoad = [
@@ -68,19 +109,23 @@ const aiFeatures = [
 const aiSuggestions = [
   "Fusionner les tâches 'Design Header' et 'Design Footer' ?",
   "Ahmed est surchargé → redistribuer 3 tâches ?",
-  "Activer le mode Focus (productivité +42% en moyenne) ?"
+  "Activer le mode Focus (productivité +42% en moyenne) ?",
 ];
 
 export default function Dashboard() {
   const [showChatbot, setShowChatbot] = useState(false);
   const [mood, setMood] = useState(null);
 
+  const todayLabel = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
   return (
     <>
-
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 dark:from-black dark:via-slate-950 dark:to-slate-900">
         <div className="max-w-7xl mx-auto px-6 py-12 space-y-16">
-
 
           <motion.div
             initial={{ opacity: 0, y: -40 }}
@@ -91,7 +136,7 @@ export default function Dashboard() {
               Bon retour !
             </h1>
             <p className="mt-4 text-xl text-muted-foreground">
-              Ton assistant IA analyse tout en temps réel • {new Date().toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' })}
+              Ton assistant IA analyse tout en temps réel • {todayLabel}
             </p>
           </motion.div>
 
@@ -100,18 +145,30 @@ export default function Dashboard() {
             {[
               { icon: Brain, label: "IA utilisée", value: stats.aiUsage, gradient: "from-violet-500 to-purple-600" },
               { icon: Zap, label: "Tâches aujourd'hui", value: stats.tasksToday, gradient: "from-blue-500 to-cyan-500" },
-              { icon: Target, label: "Objectifs atteints", value: stats.goalsReached, gradient: "from-emerald-500 to-teal-600" },
-              { icon: TrendingUp, label: "Productivité", value: stats.productivity, gradient: "from-orange-500 to-pink-600" },
+              {
+                icon: Target,
+                label: "Objectifs atteints",
+                value: stats.goalsReached,
+                gradient: "from-emerald-500 to-teal-600",
+              },
+              {
+                icon: TrendingUp,
+                label: "Productivité",
+                value: stats.productivity,
+                gradient: "from-orange-500 to-pink-600",
+              },
             ].map((stat, i) => (
               <motion.div
-                key={i}
+                key={stat.label}
                 initial={{ y: 60, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: i * 0.1 }}
                 className="group"
               >
                 <Card className="p-6 bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-white/30 hover:scale-105 transition-all duration-300">
-                  <div className={`inline-flex p-3 rounded-2xl bg-gradient-to-br ${stat.gradient} shadow-lg`}>
+                  <div
+                    className={`inline-flex p-3 rounded-2xl bg-gradient-to-br ${stat.gradient} shadow-lg`}
+                  >
                     <stat.icon className="h-8 w-8 text-white" />
                   </div>
                   <p className="mt-4 text-sm font-medium text-muted-foreground">{stat.label}</p>
@@ -123,7 +180,7 @@ export default function Dashboard() {
             ))}
           </div>
 
-   
+
           <section>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-3xl font-bold flex items-center gap-3">
@@ -144,21 +201,30 @@ export default function Dashboard() {
               <Progress value={71} className="h-4 mb-6" />
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {todayTasks.map(task => (
+                {todayTasks.map((task) => (
                   <div
                     key={task.id}
                     className={`p-4 rounded-2xl border-2 ${
-                      task.status === "late" ? "border-red-500 bg-red-50 dark:bg-red-950/30" :
-                      task.status === "done" ? "border-green-500 bg-green-50 dark:bg-green-950/30" :
-                      "border-gray-300 dark:border-gray-700"
+                      task.status === "late"
+                        ? "border-red-500 bg-red-50 dark:bg-red-950/30"
+                        : task.status === "done"
+                        ? "border-green-500 bg-green-50 dark:bg-green-950/30"
+                        : "border-gray-300 dark:border-gray-700"
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <p className="font-medium">{task.title}</p>
-                      {task.status === "late" && <AlertCircle className="h-5 w-5 text-red-600" />}
-                      {task.status === "done" && <CheckCircle className="h-5 w-5 text-green-600" />}
+                      {task.status === "late" && (
+                        <AlertCircle className="h-5 w-5 text-red-600" />
+                      )}
+                      {task.status === "done" && (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      )}
                     </div>
-                    <Badge className="mt-2" variant={task.priority === "Haute" ? "destructive" : "secondary"}>
+                    <Badge
+                      className="mt-2"
+                      variant={task.priority === "Haute" ? "destructive" : "secondary"}
+                    >
                       {task.priority}
                     </Badge>
                   </div>
@@ -167,24 +233,22 @@ export default function Dashboard() {
             </Card>
           </section>
 
-      
+       
           <section>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-3xl font-bold flex items-center gap-3">
                 <BarChart3 className="h-8 w-8 text-violet-600" /> Projets actifs
               </h2>
               <Button variant="outline" asChild>
-                <Link to="/projects">Voir tout <ArrowRight className="ml-2 h-4 w-4" /></Link>
+                <Link to="/projects" className="flex items-center">
+                  Voir tout <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {activeProjects.map((proj, i) => (
-                <motion.div
-                  key={i}
-                  whileHover={{ y: -8 }}
-                  className="group"
-                >
+              {activeProjects.map((proj) => (
+                <motion.div key={proj.name} whileHover={{ y: -8 }} className="group">
                   <Card className="p-6 bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-white/30">
                     <h3 className="text-xl font-bold mb-3">{proj.name}</h3>
                     <Progress value={proj.progress} className="h-3 mb-4" />
@@ -198,7 +262,7 @@ export default function Dashboard() {
             </div>
           </section>
 
-     
+        
           <div className="grid lg:grid-cols-2 gap-10">
             <Card className="p-8 bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-white/30">
               <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
@@ -213,10 +277,20 @@ export default function Dashboard() {
                       </Avatar>
                       <div>
                         <p className="font-semibold">{m.name}</p>
-                        <p className="text-sm text-muted-foreground">{m.tasks} tâches assignées</p>
+                        <p className="text-sm text-muted-foreground">
+                          {m.tasks} tâches assignées
+                        </p>
                       </div>
                     </div>
-                    <div className={`w-4 h-4 rounded-full ${m.status === "overload" ? "bg-red-500" : m.status === "medium" ? "bg-orange-500" : "bg-green-500"} animate-pulse`} />
+                    <div
+                      className={`w-4 h-4 rounded-full ${
+                        m.status === "overload"
+                          ? "bg-red-500"
+                          : m.status === "medium"
+                          ? "bg-orange-500"
+                          : "bg-green-500"
+                      } animate-pulse`}
+                    />
                   </div>
                 ))}
               </div>
@@ -224,28 +298,37 @@ export default function Dashboard() {
 
             <Card className="p-8 bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-white/30">
               <h3 className="text-2xl font-bold mb-6">Comment vas-tu aujourd’hui ?</h3>
-              <div className="flex justify-center gap-10 text-7xl">
+              <div className="flex justify-center gap-10 text-6xl">
                 {["happy", "neutral", "sad"].map((feeling) => (
                   <button
                     key={feeling}
+                    type="button"
                     onClick={() => setMood(feeling)}
-                    className={`transition hover:scale-125 ${mood === feeling ? "scale-125" : ""}`}
+                    className={`transition hover:scale-125 ${
+                      mood === feeling ? "scale-125" : ""
+                    }`}
                   >
-                    {feeling === "happy" ? "great" : feeling === "neutral" ? "neutral" : "sad"}
+                    {feeling === "happy" ? "😊" : feeling === "neutral" ? "😐" : "😔"}
                   </button>
                 ))}
               </div>
               {mood && (
                 <p className="text-center mt-8 text-lg font-medium">
-                  Merci ! Tu te sens <span className="text-indigo-600 font-bold">
-                    {mood === "happy" ? "au top" : mood === "neutral" ? "correct" : "fatigué"}
-                  </span> aujourd’hui.
+                  Merci ! Tu te sens{" "}
+                  <span className="text-indigo-600 font-bold">
+                    {mood === "happy"
+                      ? "au top"
+                      : mood === "neutral"
+                      ? "correct"
+                      : "fatigué"}
+                  </span>{" "}
+                  aujourd’hui.
                 </p>
               )}
             </Card>
           </div>
 
-
+    
           <Card className="p-8 bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-white/30">
             <h3 className="text-2xl font-bold mb-6 flex items-center gap-3">
               <Activity className="h-7 w-7 text-blue-600" /> Activité récente
@@ -258,7 +341,8 @@ export default function Dashboard() {
                   </div>
                   <div className="flex-1">
                     <p>
-                      <strong>{act.user}</strong> {act.action} <strong>{act.task}</strong>
+                      <strong>{act.user}</strong> {act.action}{" "}
+                      <strong>{act.task}</strong>
                     </p>
                     <p className="text-sm text-muted-foreground">{act.time}</p>
                   </div>
@@ -267,15 +351,16 @@ export default function Dashboard() {
             </div>
           </Card>
 
-          
+   
           <section className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 rounded-3xl p-8 border border-indigo-300 dark:border-indigo-700">
-            <h3 className="text-3xl font-bold mb-8 flex items_center gap-4">
-              <Lightbulb className="h-9 w-9 text-yellow-500" /> Suggestions intelligentes de TaskFlow IA
+            <h3 className="text-3xl font-bold mb-8 flex items-center gap-4">
+              <Lightbulb className="h-9 w-9 text-yellow-500" /> Suggestions intelligentes de
+              TaskFlow IA
             </h3>
             <div className="grid md:grid-cols-3 gap-6">
               {aiSuggestions.map((s, i) => (
                 <motion.div
-                  key={i}
+                  key={s}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.2 }}
@@ -290,7 +375,7 @@ export default function Dashboard() {
             </div>
           </section>
 
-      
+
           <div className="grid lg:grid-cols-2 gap-10">
             <Card className="p-8 bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-white/30">
               <h3 className="text-2xl font-bold mb-6">Productivité cette semaine</h3>
@@ -301,7 +386,13 @@ export default function Dashboard() {
                   <YAxis />
                   <Tooltip />
                   <Line type="monotone" dataKey="total" stroke="#94a3b8" strokeWidth={3} />
-                  <Line type="monotone" dataKey="ai" stroke="#8b5cf6" strokeWidth={5} dot={{ fill: "#8b5cf6" }} />
+                  <Line
+                    type="monotone"
+                    dataKey="ai"
+                    stroke="#8b5cf6"
+                    strokeWidth={5}
+                    dot={{ fill: "#8b5cf6" }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </Card>
@@ -310,8 +401,17 @@ export default function Dashboard() {
               <h3 className="text-2xl font-bold mb-6">Fonctionnalités IA utilisées</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
-                  <Pie data={aiFeatures} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value">
-                    {aiFeatures.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                  <Pie
+                    data={aiFeatures}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    dataKey="value"
+                  >
+                    {aiFeatures.map((entry, i) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
                   </Pie>
                   <Tooltip />
                 </PieChart>
@@ -320,11 +420,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-    
+     
         <motion.button
+          type="button"
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ delay: 1 }}
+          transition={{ delay: 0.6 }}
           onClick={() => setShowChatbot(true)}
           className="fixed bottom-8 right-8 z-50 h-16 w-16 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300"
         >
@@ -336,5 +437,3 @@ export default function Dashboard() {
     </>
   );
 }
-
-
