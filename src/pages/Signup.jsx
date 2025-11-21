@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, CheckCircle, AlertCircle } from "lucide-react";
+import { signInWithCustomToken } from "firebase/auth";
 
+import { auth } from "@/firebase";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { TextField } from "@/components/auth/TextField";
 import { PasswordField } from "@/components/auth/PasswordField";
@@ -9,7 +11,10 @@ import { SocialButtons } from "@/components/auth/SocialButtons";
 import { FormAlert } from "@/components/auth/FormAlert";
 import { AuthButton } from "@/components/auth/AuthButton";
 
-export default function Register() {
+// Change this if your backend runs on a different port
+const API_URL = "http://localhost:3000/api/auth";
+
+export default function Signup() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,8 +27,8 @@ export default function Register() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const [mounted, setMounted] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => setMounted(true), []);
@@ -44,7 +49,7 @@ export default function Register() {
     setConfirmValid(confirm === password && confirm.length >= 6);
   }, [confirm, password]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!nameValid || !emailValid || !passwordValid || !confirmValid) {
@@ -55,18 +60,63 @@ export default function Register() {
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      localStorage.setItem("isAuthenticated", "true");
-      navigate("/");
-    }, 1400);
+    try {
+      console.log("Sending signup request:", { name: fullName, email });
+
+      const res = await fetch(`${API_URL}/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: fullName, email, password }),
+      });
+
+      const data = await res.json();
+      console.log("Backend response:", data);
+
+      if (!res.ok) {
+        throw new Error(data.error || "Échec de l'inscription");
+      }
+
+      // Exchange custom token
+      console.log("Exchanging custom token...");
+      const userCredential = await signInWithCustomToken(auth, data.token);
+      const idToken = await userCredential.user.getIdToken();
+
+      console.log("ID token received:", idToken.substring(0, 30) + "...");
+
+      // Store auth data
+      localStorage.setItem("idToken", idToken);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      navigate("/app", { replace: true });
+    } catch (err) {
+      console.error("Signup error:", err);
+
+      // Network error
+      if (err.name === "TypeError" && err.message.includes("fetch")) {
+        setError("Impossible de contacter le serveur. Vérifiez que le backend est démarré[](http://localhost:3000).");
+      }
+      // Firebase errors
+      else if (err.code?.startsWith("auth/")) {
+        setError(
+          err.code === "auth/email-already-in-use"
+            ? "Cet email est déjà utilisé"
+            : err.code === "auth/weak-password"
+            ? "Mot de passe trop faible"
+            : err.message
+        );
+      }
+      // Backend error
+      else {
+        setError(err.message || "Erreur inconnue");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSocial = () => {
     setLoading(true);
-    setTimeout(() => {
-      localStorage.setItem("isAuthenticated", "true");
-      navigate("/");
-    }, 1400);
+    setTimeout(() => navigate("/app"), 1400);
   };
 
   if (!mounted) return null;
@@ -74,7 +124,6 @@ export default function Register() {
   return (
     <AuthLayout>
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-
         <div className="text-center mb-8">
           <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-xl mx-auto mb-4 animate-pulse">
             <span className="text-white font-black text-2xl">T</span>
@@ -87,9 +136,7 @@ export default function Register() {
           </p>
         </div>
 
-
         <form onSubmit={handleSubmit} className="space-y-5">
-     
           <TextField
             label="Nom complet"
             value={fullName}
@@ -100,20 +147,13 @@ export default function Register() {
             rightSlot={
               fullName &&
               (nameValid ? (
-                <CheckCircle
-                  size={18}
-                  className="text-emerald-500 animate-in fade-in zoom-in duration-300"
-                />
+                <CheckCircle size={18} className="text-emerald-500 animate-in fade-in zoom-in duration-300" />
               ) : (
-                <AlertCircle
-                  size={18}
-                  className="text-rose-500 animate-in fade-in zoom-in duration-300"
-                />
+                <AlertCircle size={18} className="text-rose-500 animate-in fade-in zoom-in duration-300" />
               ))
             }
           />
 
- 
           <TextField
             label="Adresse email"
             type="email"
@@ -125,19 +165,12 @@ export default function Register() {
             rightSlot={
               email &&
               (emailValid ? (
-                <CheckCircle
-                  size={18}
-                  className="text-emerald-500 animate-in fade-in zoom-in duration-300"
-                />
+                <CheckCircle size={18} className="text-emerald-500 animate-in fade-in zoom-in duration-300" />
               ) : (
-                <AlertCircle
-                  size={18}
-                  className="text-rose-500 animate-in fade-in zoom-in duration-300"
-                />
+                <AlertCircle size={18} className="text-rose-500 animate-in fade-in zoom-in duration-300" />
               ))
             }
           />
-
 
           <PasswordField
             label="Mot de passe"
@@ -148,20 +181,13 @@ export default function Register() {
             extraRightSlot={
               password &&
               (passwordValid ? (
-                <CheckCircle
-                  size={18}
-                  className="text-emerald-500 animate-in fade-in zoom-in duration-300"
-                />
+                <CheckCircle size={18} className="text-emerald-500 animate-in fade-in zoom-in duration-300" />
               ) : (
-                <AlertCircle
-                  size={18}
-                  className="text-rose-500 animate-in fade-in zoom-in duration-300"
-                />
+                <AlertCircle size={18} className="text-rose-500 animate-in fade-in zoom-in duration-300" />
               ))
             }
           />
 
- 
           <PasswordField
             label="Confirmer le mot de passe"
             value={confirm}
@@ -171,53 +197,36 @@ export default function Register() {
             extraRightSlot={
               confirm &&
               (confirmValid ? (
-                <CheckCircle
-                  size={18}
-                  className="text-emerald-500 animate-in fade-in zoom-in duration-300"
-                />
+                <CheckCircle size={18} className="text-emerald-500 animate-in fade-in zoom-in duration-300" />
               ) : (
-                <AlertCircle
-                  size={18}
-                  className="text-rose-500 animate-in fade-in zoom-in duration-300"
-                />
+                <AlertCircle size={18} className="text-rose-500 animate-in fade-in zoom-in duration-300" />
               ))
             }
           />
 
-      
           {error && <FormAlert>{error}</FormAlert>}
 
-  
           <AuthButton
             type="submit"
             variant="primary"
-            disabled={
-              loading ||
-              !nameValid ||
-              !emailValid ||
-              !passwordValid ||
-              !confirmValid
-            }
+            disabled={loading || !nameValid || !emailValid || !passwordValid || !confirmValid}
           >
-            {loading && <span className="animate-spin">⏳</span>}
+            {loading && <span className="animate-spin">Loading...</span>}
             <span>Créer le compte</span>
           </AuthButton>
         </form>
 
-  
         <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-white dark:bg-slate-900 px-4 text-sm text-slate-500 dark:text-slate-400">ou</span>
-            </div>
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
+          </div>
+          <div className="relative flex justify-center">
+            <span className="bg-white dark:bg-slate-900 px-4 text-sm text-slate-500 dark:text-slate-400">ou</span>
+          </div>
         </div>
 
-    
         <SocialButtons onClick={handleSocial} loading={loading} />
 
-     
         <p className="text-center text-sm text-slate-600 dark:text-slate-400 mt-8">
           Déjà inscrit ?{" "}
           <Link
