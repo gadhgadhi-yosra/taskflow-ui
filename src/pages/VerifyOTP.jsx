@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { AuthLayout } from "@/components/auth/AuthLayout";
-import { OtpInput } from "@/components/auth/OtpInput";
+import { OTPInput } from "@/components/auth/OTPInput";
 import { FormAlert } from "@/components/auth/FormAlert";
 import { AuthButton } from "@/components/auth/AuthButton";
 
@@ -56,7 +56,7 @@ export default function VerifyOTP() {
 
   
         <form onSubmit={handleSubmit} className="space-y-6">
-          <OtpInput value={otp} onChange={setOtp} />
+          <OTPInput value={otp} onChange={setOtp} />
 
           {error && <FormAlert>{error}</FormAlert>}
           {success && (
