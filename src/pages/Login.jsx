@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, CheckCircle, AlertCircle } from "lucide-react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-
-import { auth } from "../firebase"; // ← Your config
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { TextField } from "@/components/auth/TextField";
 import { PasswordField } from "@/components/auth/PasswordField";
@@ -11,7 +8,7 @@ import { SocialButtons } from "@/components/auth/SocialButtons";
 import { FormAlert } from "@/components/auth/FormAlert";
 import { AuthButton } from "@/components/auth/AuthButton";
 
-const API_URL = "http://localhost:3000/api/auth";
+const API_URL = "http://localhost:3000";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -41,11 +38,6 @@ export default function Login() {
     setLoading(true);
 
     try {
-      // 1. Firebase Client Sign In
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await userCredential.user.getIdToken();
-
-      // 2. Send ID Token to Backend (optional: sync user)
       const res = await fetch(`${API_URL}/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,20 +45,21 @@ export default function Login() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Login failed");
+      if (!res.ok) throw new Error(data.error || "Échec de la connexion");
 
-      // 3. Store JWT (ID Token) for protected routes
-      localStorage.setItem("idToken", idToken);
+      // Store token and user returned by backend
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("isAuthenticated", "true");
 
-      // 4. Redirect
       navigate("/app");
     } catch (err) {
-      setError(err.message.includes("wrong-password")
+      const msg = String(err.message || "Erreur inconnue");
+      setError(msg.includes("wrong-password")
         ? "Mot de passe incorrect"
-        : err.message.includes("user-not-found")
+        : msg.includes("user-not-found")
         ? "Aucun compte avec cet email"
-        : err.message);
+        : msg);
     } finally {
       setLoading(false);
     }

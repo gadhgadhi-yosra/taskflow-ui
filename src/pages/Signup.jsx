@@ -1,9 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Mail, CheckCircle, AlertCircle } from "lucide-react";
-import { signInWithCustomToken } from "firebase/auth";
-
-import { auth } from "@/firebase";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { TextField } from "@/components/auth/TextField";
 import { PasswordField } from "@/components/auth/PasswordField";
@@ -12,7 +9,7 @@ import { FormAlert } from "@/components/auth/FormAlert";
 import { AuthButton } from "@/components/auth/AuthButton";
 
 // Change this if your backend runs on a different port
-const API_URL = "http://localhost:3000/api/auth";
+const API_URL = "http://localhost:3000";
 
 export default function Signup() {
   const [fullName, setFullName] = useState("");
@@ -76,16 +73,10 @@ export default function Signup() {
         throw new Error(data.error || "Échec de l'inscription");
       }
 
-      // Exchange custom token
-      console.log("Exchanging custom token...");
-      const userCredential = await signInWithCustomToken(auth, data.token);
-      const idToken = await userCredential.user.getIdToken();
-
-      console.log("ID token received:", idToken.substring(0, 30) + "...");
-
-      // Store auth data
-      localStorage.setItem("idToken", idToken);
+      // Store auth data returned by backend
+      localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
+      localStorage.setItem("isAuthenticated", "true");
 
       navigate("/app", { replace: true });
     } catch (err) {
@@ -93,7 +84,7 @@ export default function Signup() {
 
       // Network error
       if (err.name === "TypeError" && err.message.includes("fetch")) {
-        setError("Impossible de contacter le serveur. Vérifiez que le backend est démarré[](http://localhost:3000).");
+        setError("Impossible de contacter le serveur. Vérifiez que le backend est démarré (http://localhost:3000).");
       }
       // Firebase errors
       else if (err.code?.startsWith("auth/")) {
