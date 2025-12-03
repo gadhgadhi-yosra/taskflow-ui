@@ -7,6 +7,7 @@ import { PasswordField } from "@/components/auth/PasswordField";
 import { SocialButtons } from "@/components/auth/SocialButtons";
 import { FormAlert } from "@/components/auth/FormAlert";
 import { AuthButton } from "@/components/auth/AuthButton";
+import { useAuth } from "@/context/AuthContext";
 
 // Change this if your backend runs on a different port
 const API_URL = "http://localhost:3000";
@@ -27,6 +28,7 @@ export default function Signup() {
   const [mounted, setMounted] = useState(false);
 
   const navigate = useNavigate();
+  const { signup, login } = useAuth();
 
   useEffect(() => setMounted(true), []);
 
@@ -73,12 +75,9 @@ export default function Signup() {
         throw new Error(data.error || "Échec de l'inscription");
       }
 
-      // Store auth data returned by backend
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("isAuthenticated", "true");
-
-      navigate("/app", { replace: true });
+      // Use central login so context updates immediately
+      await login(data.user, data.token);
+      navigate("/home", { replace: true });
     } catch (err) {
       console.error("Signup error:", err);
 
@@ -107,7 +106,12 @@ export default function Signup() {
 
   const handleSocial = () => {
     setLoading(true);
-    setTimeout(() => navigate("/app"), 1400);
+    setTimeout(() => {
+      // demo social -> use signup helper (creates demo user) then navigate
+      signup("Demo User", "user@example.com", "password123").then(() => {
+        navigate("/home", { replace: true });
+      }).finally(() => setLoading(false));
+    }, 1400);
   };
 
   if (!mounted) return null;

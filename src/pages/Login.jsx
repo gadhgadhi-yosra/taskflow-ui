@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Mail, CheckCircle, AlertCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { TextField } from "@/components/auth/TextField";
 import { PasswordField } from "@/components/auth/PasswordField";
@@ -18,6 +19,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   useEffect(() => {
     setEmailValid(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
@@ -47,13 +49,10 @@ export default function Login() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Échec de la connexion");
 
-      // Store token and user returned by backend
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("isAuthenticated", "true");
-
+      // Use central auth login so context updates immediately
+      await login(data.user, data.token);
       // navigate to protected home
-      navigate("/home");
+      navigate("/home", { replace: true });
     } catch (err) {
       const msg = String(err.message || "Erreur inconnue");
       setError(msg.includes("wrong-password")
@@ -69,9 +68,10 @@ export default function Login() {
   const handleSocial = () => {
     setLoading(true);
     setTimeout(() => {
-      localStorage.setItem("isAuthenticated", "true");
-      navigate("/home");
-      setLoading(false);
+      // Demo social login using central login
+      login({ id: "demo", name: "Demo User", email: "user@example.com" }, "demo-token").then(() => {
+        navigate("/home", { replace: true });
+      }).finally(() => setLoading(false));
     }, 1200);
   };
 
