@@ -269,7 +269,7 @@ export default function Tasks() {
 
   const handleCreateTaskClick = () => {
     if (!effectiveProjectId) return;
-    navigate(`/app/projects/${effectiveProjectId}/add-task`);
+    navigate(`/home/projects/${effectiveProjectId}/add-task`);
   };
 
 

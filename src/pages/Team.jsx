@@ -260,13 +260,13 @@ export default function Team() {
 
   const handleAddMemberClick = () => {
     if (!selectedProjectId) return;
-    navigate(`/app/projects/${selectedProjectId}/add-member`);
+    navigate(`/home/projects/${selectedProjectId}/add-member`);
   };
 
   const handleCardClick = (member) => {
     if (!selectedProjectId) return;
 
-    navigate(`/app/team/${selectedProjectId}/member/${member.id}`);
+    navigate(`/home/team/${selectedProjectId}/member/${member.id}`);
   };
 
   const insights = useMemo(() => {

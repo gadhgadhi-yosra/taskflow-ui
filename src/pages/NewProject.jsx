@@ -79,7 +79,7 @@ export default function NewProject() {
       console.error("Erreur écriture localStorage projets:", err);
     }
 
-    navigate("/app/projects");
+    navigate("/home/projects");
   };
 
   const selectedColor = COLORS.find((c) => c.value === color) || COLORS[0];
@@ -360,7 +360,7 @@ export default function NewProject() {
           <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100">
             <button
               type="button"
-              onClick={() => navigate("/app/projects")}
+              onClick={() => navigate("/home/projects")}
               className="px-6 py-3 rounded-2xl border border-slate-200 text-slate-700 text-sm font-medium hover:bg-slate-50 transition-all"
             >
               Annuler

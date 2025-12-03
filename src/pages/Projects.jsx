@@ -434,11 +434,11 @@ export default function Projects() {
   };
 
   const handleViewTasks = (project) => {
-    navigate(`/app/tasks?projectId=${project.id}`);
+    navigate(`/home/tasks?projectId=${project.id}`);
   };
 
   const handleViewTeam = (project) => {
-    navigate(`/app/team?projectId=${project.id}`);
+    navigate(`/home/team?projectId=${project.id}`);
   };
 
   const handleDuplicate = (project) => {
@@ -511,7 +511,7 @@ export default function Projects() {
 
             <PrimaryPillButton
               icon={Plus}
-              onClick={() => navigate("/app/projects/new")}
+              onClick={() => navigate("/home/projects/new")}
             >
               Nouveau projet
             </PrimaryPillButton>
@@ -797,7 +797,7 @@ export default function Projects() {
             </p>
             <PrimaryPillButton
               icon={Plus}
-              onClick={() => navigate("/app/projects/new")}
+              onClick={() => navigate("/home/projects/new")}
             >
               Créer un projet
             </PrimaryPillButton>

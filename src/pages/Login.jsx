@@ -52,7 +52,8 @@ export default function Login() {
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("isAuthenticated", "true");
 
-      navigate("/app");
+      // navigate to protected home
+      navigate("/home");
     } catch (err) {
       const msg = String(err.message || "Erreur inconnue");
       setError(msg.includes("wrong-password")
@@ -69,7 +70,7 @@ export default function Login() {
     setLoading(true);
     setTimeout(() => {
       localStorage.setItem("isAuthenticated", "true");
-      navigate("/");
+      navigate("/home");
       setLoading(false);
     }, 1200);
   };

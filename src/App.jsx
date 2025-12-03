@@ -1,10 +1,9 @@
 // src/App.jsx
 import { Routes, Route, Navigate, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState, createContext, useContext } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth } from "@/firebase";
+import { useEffect, useState } from "react";
 
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -16,51 +15,12 @@ import Tasks from "@/pages/Tasks";
 import Team from "@/pages/Team";
 import Settings from "@/pages/Settings";
 
-// ────────────────────────────────────────────────────────────────
-// Auth Context (Single source of truth)
-const AuthContext = createContext();
-
-function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setLoading(false);
-    });
-    return unsubscribe;
-  }, []);
-
-const logout = async () => {
-  try {
-    await signOut(auth);
-
-    // 👇 Delete your token here
-    localStorage.removeItem("token"); 
-    sessionStorage.removeItem("token");
-    // or remove cookies if you use cookies
-
-    setUser(null);
-  } catch (error) {
-    console.error("Logout error:", error);
-  }
-};
-
-
-  return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-const useAuth = () => useContext(AuthContext);
-
-// ────────────────────────────────────────────────────────────────
+// Auth context moved to `src/context/AuthContext.jsx`
 // Layout
 function AppLayout() {
-  const { user } = useAuth();
+  // useAuth is provided by the context in src/context/AuthContext.jsx
+  const raw = localStorage.getItem("user");
+  const user = raw ? JSON.parse(raw) : null;
   const location = useLocation();
   const noLayoutPaths = ["/login", "/signup", "/forgot-password", "/verify-otp"];
   const isAuthPage = noLayoutPaths.includes(location.pathname);
@@ -97,7 +57,7 @@ function PublicRoute({ children }) {
 
   if (loading) return null;
 
-  return user ? <Navigate to="/app" replace /> : children;
+  return user ? <Navigate to="/home" replace /> : children;
 }
 
 // ────────────────────────────────────────────────────────────────
@@ -107,9 +67,8 @@ function LogoutPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    logout().then(() => {
-      navigate("/login", { replace: true });
-    });
+    // logout will handle clearing storage and redirecting
+    logout();
   }, [logout, navigate]);
 
   return (
@@ -133,9 +92,9 @@ export default function App() {
         {/* Logout Route */}
         <Route path="/logout" element={<LogoutPage />} />
 
-        {/* Protected App */}
+        {/* Protected App (use /home as main protected route) */}
         <Route
-          path="/app"
+          path="/home"
           element={
             <ProtectedRoute>
               <AppLayout />
@@ -154,7 +113,7 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <Navigate to="/app" replace />
+              <Navigate to="/home" replace />
             </ProtectedRoute>
           }
         />

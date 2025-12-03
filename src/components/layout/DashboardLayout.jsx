@@ -1,24 +1,22 @@
 
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 import { Home, FolderKanban, CheckSquare, Users, Settings, LogOut, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { to: "/app", icon: Home, label: "Tableau de bord" },
-  { to: "/app/projects", icon: FolderKanban, label: "Projets" },
-  { to: "/app/tasks", icon: CheckSquare, label: "Mes tâches" },
-  { to: "/app/team", icon: Users, label: "Équipe" },
-  { to: "/app/settings", icon: Settings, label: "Paramètres" },
+  { to: "/home", icon: Home, label: "Tableau de bord" },
+  { to: "/home/projects", icon: FolderKanban, label: "Projets" },
+  { to: "/home/tasks", icon: CheckSquare, label: "Mes tâches" },
+  { to: "/home/team", icon: Users, label: "Équipe" },
+  { to: "/home/settings", icon: Settings, label: "Paramètres" },
 ];
 
 export const DashboardLayout = ({ children }) => {
   const location = useLocation();
+  const { logout } = useAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    window.location.href = "/login";
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 dark:from-black dark:via-slate-950 dark:to-slate-900">
@@ -60,7 +58,7 @@ export const DashboardLayout = ({ children }) => {
 
           <div className="px-3">
             <Button
-              onClick={handleLogout}
+              onClick={() => logout()}
               variant="ghost"
               size="icon"
               className="h-12 w-12 rounded-2xl text-red-500 hover:scale-110 hover:bg-red-500/10"

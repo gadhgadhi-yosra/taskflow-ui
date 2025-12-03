@@ -11,14 +11,14 @@ import { NavLink } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/App"; // ← Import from App.jsx
+import { useAuth } from "@/context/AuthContext";
 
 const menuItems = [
-  { icon: Home, label: "Tableau de bord", path: "/app" },
-  { icon: FolderKanban, label: "Projets", path: "/app/projects" },
-  { icon: CheckSquare, label: "Mes tâches", path: "/app/tasks" },
-  { icon: Users, label: "Équipe", path: "/app/team" },
-  { icon: Settings, label: "Paramètres", path: "/app/settings" },
+  { icon: Home, label: "Tableau de bord", path: "/home" },
+  { icon: FolderKanban, label: "Projets", path: "/home/projects" },
+  { icon: CheckSquare, label: "Mes tâches", path: "/home/tasks" },
+  { icon: Users, label: "Équipe", path: "/home/team" },
+  { icon: Settings, label: "Paramètres", path: "/home/settings" },
 ];
 
 export const Sidebar = () => {
